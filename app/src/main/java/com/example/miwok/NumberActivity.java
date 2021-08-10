@@ -1,20 +1,62 @@
 package com.example.miwok;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.content.Context;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
+
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
 
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class NumberActivity extends AppCompatActivity {
+    MediaPlayer mediaPlayer;
+    AudioManager mAudioManager;
+    private final AudioManager.OnAudioFocusChangeListener mOnAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ||
+                    focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+                // The AUDIOFOCUS_LOSS_TRANSIENT case means that we've lost audio focus for a
+                // short amount of time. The AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK case means that
+                // our app is allowed to continue playing sound but at a lower volume. We'll treat
+                // both cases the same way because our app is playing short sound files.
+                Log.i("AudioFocus", "Loss_Transient");
+                // Pause playback and reset player to the start of the file. That way, we can
+                // play the word from the beginning when we resume playback.
+
+                mediaPlayer.seekTo(0);
+                mediaPlayer.pause();
+            } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN && mediaPlayer != null) {
+                // The AUDIOFOCUS_GAIN case means we have regained focus and can resume playback.
+                Log.i("AudioFocus", "Gain");
+                mediaPlayer.start();
+            } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                // The AUDIOFOCUS_LOSS case means we've lost audio focus and
+                // Stop playback and clean up resources
+                //   mAudioManager.unregisterMediaButtonEventReceiver(RemoteControlRevice);
+                Log.i("AudioFocus", "Loss");
+                releaseMediaPlayer();
+            }
+        }
+    };
+    private final MediaPlayer.OnCompletionListener mCompletionListener = mediaPlayer -> {
+        // Now that the sound file has finished playing, release the media player resources.
+        releaseMediaPlayer();
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_number);
-        ArrayList<Word> words = new ArrayList<>();
-
+        final ArrayList<Word> words = new ArrayList<>();
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 //        words.add( "one");
 //        words.add( "two");
 //        words.add( "three");
@@ -45,11 +87,51 @@ public class NumberActivity extends AppCompatActivity {
         words.add(new Word("nine", "wo’e", R.drawable.number_nine, R.raw.number_nine));
         words.add(new Word("ten", "na’aacha", R.drawable.number_ten, R.raw.number_ten));
 
+
 //         WordAdapter itemsAdapter = new WordAdapter(this,R.layout.list_item, words);
         // Here we are not passing LayoutId because we are passing it or inflating it in getView()
         WordAdapter itemsAdapter = new WordAdapter(this, words, R.color.category_numbers);
         ListView listView = findViewById(R.id.list);
-
         listView.setAdapter(itemsAdapter);
+        //We can play Audio for total ListView clicked this is another way WE NEED TO MAKE ArrayList as "final"
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            // Release the media player if it currently exists because we are about to
+            // play a different sound file before completion
+            releaseMediaPlayer();
+            //to get Word object from adapterView and make final ArrayList
+            Word word = words.get(position);
+            int result = mAudioManager.requestAudioFocus(mOnAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                //     mAudioManager.registerMediaButtonEventReceiver(RemoteControlRevice);
+                mediaPlayer = MediaPlayer.create(NumberActivity.this, word.getMediaResourceId());
+                mediaPlayer.start();
+                // Setup a listener on the media player, so that we can stop and release the
+                // media player once the sound has finished playing.
+                mediaPlayer.setOnCompletionListener(mCompletionListener);
+            }
+
+        });
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseMediaPlayer();
+    }
+
+    private void releaseMediaPlayer() {
+        // If the media player is not null, then it may be currently playing a sound.
+        if (mediaPlayer != null) {
+            // Regardless of the current state of the media player, release its resources
+            // because we no longer need it.
+            mediaPlayer.release();
+
+            // Set the media player back to null. For our code, we've decided that
+            // setting the media player to null is an easy way to tell that the media player
+            // is not configured to play an audio file at the moment.
+            mediaPlayer = null;
+            mAudioManager.abandonAudioFocus(mOnAudioFocusChangeListener);
+        }
     }
 }

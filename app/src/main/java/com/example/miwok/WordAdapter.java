@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +22,7 @@ public class WordAdapter extends ArrayAdapter<Word> {
 //        super(context, 0, textViewResourceId);
 //    }
     private final int categorycolor;
+    //  MediaPlayer mediaPlayer;
 
     WordAdapter(Context context, ArrayList<Word> textViewResourceId, int category_color) {
 
@@ -62,9 +64,20 @@ public class WordAdapter extends ArrayAdapter<Word> {
             exampleImage.setVisibility(View.GONE);
         }
         //Media Player creating
-        MediaPlayer mediaPlayer = MediaPlayer.create(getContext(), pos.getMediaResourceId());
-        //Add View.OnClickListener but changed to Lambda function
-        linearLayout.setOnClickListener(v -> mediaPlayer.start());
+//        mediaPlayer = MediaPlayer.create(getContext(), pos.getMediaResourceId());
+//        //Add View.OnClickListener but changed to Lambda function
+//        linearLayout.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//
+//                mediaPlayer.start();
+//                mediaPlayer.setOnCompletionListener(mp -> {Toast.makeText(getContext(), "Thanks a lot", Toast.LENGTH_SHORT).show();
+//               });
+//
+//            }
+//        });
+
         return listview;
 
     }

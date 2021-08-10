@@ -15,4 +15,5 @@
     <!-- Category name for the vocabulary words for family members [CHAR LIMIT=20] -->
     <string name="category_family">Family Members</string>
     <string name="words_corresponding_image">Words Corresponding Image</string>
+    <string name="image_of_words_and_phrases">Image of words and Phrases</string>
 </resources>
